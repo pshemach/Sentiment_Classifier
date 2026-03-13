@@ -14,7 +14,8 @@ Sentiment_Classifier/
 ├── app/
 │   ├── main.py          # FastAPI application
 │   ├── model.py         # Model loading + prediction logic
-│   └── schemas.py       # Pydantic request/response models
+│   |── schemas.py       # Pydantic request/response models
+│   └── utils.py         # helper functions
 │
 ├── data/
 │   └── csv/
