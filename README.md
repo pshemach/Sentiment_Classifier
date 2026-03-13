@@ -1,4 +1,3 @@
-
 # Sentiment Classifier API
 
 A FastAPI service that serves a **DistilBERT-based sentiment classification model** trained using HuggingFace Transformers.
@@ -55,7 +54,7 @@ curl -Ls https://astral.sh/uv/install.sh | sh
 Clone the repository:
 
 ```
-git clone <your-repository-url>
+git clone https://github.com/pshemach/Sentiment_Classifier.git
 cd Sentiment_Classifier
 ```
 
@@ -104,12 +103,12 @@ This will:
 
 Evaluation metrics on the test dataset:
 
-| Metric | Score |
-|------|------|
-| Accuracy | 0.9087 |
+| Metric    | Score  |
+| --------- | ------ |
+| Accuracy  | 0.9087 |
 | Precision | 0.9086 |
-| Recall | 0.9089 |
-| F1 Score | 0.9087 |
+| Recall    | 0.9089 |
+| F1 Score  | 0.9087 |
 
 These results indicate balanced performance across both classes.
 
