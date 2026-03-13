@@ -1,59 +1,268 @@
-# Sentiment Classifier
 
-## Overview
+# Sentiment Classifier API
 
-A machine learning project for sentiment classification using natural language processing techniques.
+A FastAPI service that serves a **DistilBERT-based sentiment classification model** trained using HuggingFace Transformers.
 
-## Features
+The API predicts whether input text expresses **positive or negative sentiment** and returns a **confidence score**.
 
-- Text preprocessing and tokenization
-- Sentiment analysis (positive/negative/neutral)
-- Model training and evaluation
-- Prediction on new text samples
+---
 
-## Installation
-
-```bash
-git clone <repository-url>
-cd Sentiment_Classifier
-pip install -r requirements.txt
-```
-
-## Usage
-
-```python
-from classifier import SentimentClassifier
-
-model = SentimentClassifier()
-result = model.predict("I love this product!")
-print(result)  # Output: positive
-```
-
-## Project Structure
+# Project Structure
 
 ```
 Sentiment_Classifier/
+
+├── app/
+│   ├── main.py          # FastAPI application
+│   ├── model.py         # Model loading + prediction logic
+│   └── schemas.py       # Pydantic request/response models
+│
 ├── data/
-├── models/
-├── src/
-│   └── classifier.py
-├── README.md
-└── requirements.txt
+│   └── csv/
+│       ├── train.csv
+│       └── test.csv
+│
+├── model/               # Saved trained model
+│
+├── train.py             # Model training script
+├── pyproject.toml       # Dependencies (managed with uv)
+└── README.md
 ```
 
-## Model Performance
+---
 
-- Accuracy: [Add your metrics]
-- Precision: [Add your metrics]
-- Recall: [Add your metrics]
+# Requirements
 
-## Contributing
+- Python **3.11+**
+- **uv** package manager
 
-Contributions are welcome. Please create a pull request with your changes.
+Install uv:
 
-## License
+```
+pip install uv
+```
 
-MIT License
+or
 
-https://dev.to/sreeni5018/sentiment-analysis-on-imdb-movie-reviews-using-bert-377m
-https://medium.com/@imatasneemkoushar/fine-tuning-distilbert-on-imdb-movie-reviews-with-hugging-face-2c16c9cd6128
+```
+curl -Ls https://astral.sh/uv/install.sh | sh
+```
+
+---
+
+# Setup Instructions
+
+Clone the repository:
+
+```
+git clone <your-repository-url>
+cd Sentiment_Classifier
+```
+
+Create a virtual environment and install dependencies using **uv**:
+
+```
+uv venv
+uv sync
+```
+
+Activate the environment
+
+Windows:
+
+```
+.venv\Scripts\activate
+```
+
+Linux / macOS:
+
+```
+source .venv/bin/activate
+```
+
+---
+
+# Train the Model
+
+Run the training script:
+
+```
+python train.py
+```
+
+This will:
+
+1. Load training and testing datasets
+2. Preprocess text
+3. Fine-tune a DistilBERT model
+4. Evaluate the model
+5. Save the trained model in the `model/` directory
+
+---
+
+# Evaluation Report
+
+Evaluation metrics on the test dataset:
+
+| Metric | Score |
+|------|------|
+| Accuracy | 0.9087 |
+| Precision | 0.9086 |
+| Recall | 0.9089 |
+| F1 Score | 0.9087 |
+
+These results indicate balanced performance across both classes.
+
+---
+
+# Start the API Server
+
+Run the FastAPI service:
+
+```
+uvicorn app.main:app --reload
+```
+
+The API will start at:
+
+```
+http://127.0.0.1:8000
+```
+
+Interactive documentation:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# API Endpoints
+
+## Health Check
+
+```
+GET /health
+```
+
+Response:
+
+```
+{ "status": "ok" }
+```
+
+---
+
+# Predict Sentiment
+
+```
+POST /predict
+```
+
+Request:
+
+```
+{
+  "text": "This movie was amazing"
+}
+```
+
+Response:
+
+```
+{
+  "sentiment": "positive",
+  "confidence": 0.98
+}
+```
+
+---
+
+# Batch Prediction
+
+```
+POST /predict/batch
+```
+
+Request:
+
+```
+{
+  "texts": [
+    "This movie was fantastic",
+    "Worst movie ever"
+  ]
+}
+```
+
+Response:
+
+```
+[
+  {
+    "text": "This movie was fantastic",
+    "sentiment": "positive",
+    "confidence": 0.98
+  },
+  {
+    "text": "Worst movie ever",
+    "sentiment": "negative",
+    "confidence": 0.97
+  }
+]
+```
+
+If an empty list is sent, the API returns:
+
+```
+HTTP 400
+{
+  "detail": "The 'texts' list cannot be empty."
+}
+```
+
+---
+
+# Example CURL Request
+
+```
+curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d '{"text":"This movie was amazing"}'
+```
+
+---
+
+# Python Client Example
+
+```
+import requests
+
+url = "http://127.0.0.1:8000/predict"
+
+data = {"text": "This movie was amazing"}
+
+response = requests.post(url, json=data)
+
+print(response.json())
+```
+
+---
+
+# Model and Dataset Choice
+
+This project uses **DistilBERT**, a smaller and faster version of BERT. It provides strong language understanding while being more efficient for API-based inference.
+
+The model was fine-tuned on the **IMDb movie reviews dataset**, a widely used benchmark for sentiment analysis containing labeled positive and negative reviews.
+
+Using a pretrained transformer allows the system to leverage **transfer learning**, meaning the model already understands language structure and only needs fine-tuning for sentiment prediction.
+
+---
+
+# Approach
+
+The system fine-tunes a **DistilBERT transformer model** for binary sentiment classification using the HuggingFace Trainer API.
+
+Text inputs are tokenized with a maximum length of **256 tokens**, which captures most relevant context while keeping training efficient.
+
+Batch inference is implemented via the `/predict/batch` endpoint to improve throughput compared to sending requests one-by-one.
+
+With more time, improvements would include **experiment tracking, model versioning, and request batching queues for large-scale inference systems**.

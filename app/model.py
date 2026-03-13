@@ -1,11 +1,9 @@
 """
 Prediction script for Sentiment Classification
 """
-
 import re
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
 
 class SentimentPredictor:
 
@@ -18,7 +16,6 @@ class SentimentPredictor:
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
 
         self.model.eval()
-
 
     # ------------------------------------------------
     # Text preprocessing (same as training)
@@ -33,7 +30,6 @@ class SentimentPredictor:
         text = re.sub(r"\s+", " ", text).strip()
 
         return text
-
 
     # ------------------------------------------------
     # Predict sentiment
@@ -69,3 +65,40 @@ class SentimentPredictor:
             "sentiment": label,
             "confidence": round(confidence, 2)
         }
+        
+    # ------------------------------------------------
+    # Batch prediction
+    # ------------------------------------------------
+    def predict_batch(self, texts):
+        cleaned_texts = [self.clean_text(text) for text in texts]
+        
+        inputs = self.tokenizer(
+            cleaned_texts,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+            max_length=256
+            )
+        with torch.no_grad():
+
+            outputs = self.model(**inputs)
+
+        probs = torch.softmax(outputs.logits, dim=1)
+
+        results = []
+
+        for i, text in enumerate(texts):
+
+            prediction = torch.argmax(probs[i]).item()
+
+            confidence = probs[i][prediction].item()
+
+            sentiment = "positive" if prediction == 1 else "negative"
+
+            results.append({
+                "text": text,
+                "sentiment": sentiment,
+                "confidence": round(confidence, 4)
+            })
+
+        return results

@@ -1,6 +1,12 @@
-from fastapi import FastAPI
-from app.schemas import PredictRequest, PredictResponse
+from fastapi import FastAPI, HTTPException
+from app.schemas import (
+    PredictRequest,
+    PredictResponse,
+    BatchPredictRequest,
+    BatchPrediction
+)
 from app.model import SentimentPredictor
+from typing import List
 
 
 app = FastAPI(
@@ -33,8 +39,19 @@ def predict(request: PredictRequest):
 
     result = model.predict(request.text)
     
-    return PredictResponse(
-        text = result['text'],
-        sentiment=result['sentiment'],
-        confidence=result['confidence']
-    )
+    return result
+    
+# ------------------------------
+# Batch prediction
+# ------------------------------
+@app.post("/predict/batch", response_model=List[BatchPrediction])
+def predict_batch(request: BatchPredictRequest):
+
+    if len(request.texts) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="The 'texts' list cannot be empty."
+        )
+    results = model.predict_batch(request.texts)
+
+    return results
