@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from app.schemas import (
     PredictRequest,
     PredictResponse,
@@ -14,6 +15,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Enable CORS for production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust for specific origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model = None
 
 # ------------------------------------------------
@@ -21,37 +31,44 @@ model = None
 # ------------------------------------------------
 @app.on_event("startup")
 def load_model():
-    global model
-    model = SentimentPredictor("model")
+    global model                          # create global model variable for load the model once 
+    model = SentimentPredictor("model")  
 
 # ------------------------------------------------
 # Health endpoint
 # ------------------------------------------------
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    try:
+        if model is None:    # check whether the model is loaded correctly 
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Model not loaded")
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 # ------------------------------------------------
 # Prediction endpoint
 # ------------------------------------------------
-@app.post("/predict", response_model=PredictResponse)
+@app.post("/predict", status_code=status.HTTP_200_OK, response_model=PredictResponse)
 def predict(request: PredictRequest):
-
-    result = model.predict(request.text)
-    
-    return result
-    
+    try:
+        result = model.predict(request.text)
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            
 # ------------------------------
 # Batch prediction
 # ------------------------------
-@app.post("/predict/batch", response_model=List[BatchPrediction])
+@app.post("/predict/batch", status_code=status.HTTP_200_OK, response_model=List[BatchPrediction])
 def predict_batch(request: BatchPredictRequest):
+    try:
+        if len(request.texts) == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The 'texts' list cannot be empty.")
+        
+        results = model.predict_batch(request.texts)
 
-    if len(request.texts) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="The 'texts' list cannot be empty."
-        )
-    results = model.predict_batch(request.texts)
-
-    return results
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

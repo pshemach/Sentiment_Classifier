@@ -11,6 +11,7 @@ from transformers import (
 )
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import os
+from app.utils import clean_text
 
 # ---------------------------------------------------
 # Logger Setup
@@ -61,18 +62,6 @@ class SentimentTrainer:
         )
 
     # ---------------------------------------------------
-    # Text Cleaning
-    # ---------------------------------------------------
-    def clean_text(self, text: str) -> str:
-        text = text.lower()
-        text = re.sub(r"http\S+", "", text)
-        text = re.sub(r"<.*?>", "", text)
-        text = re.sub(r"[^a-zA-Z\s]", "", text)
-        text = re.sub(r"\s+", " ", text).strip()
-
-        return text
-
-    # ---------------------------------------------------
     # Load Dataset
     # ---------------------------------------------------
     def load_data(self):
@@ -82,11 +71,11 @@ class SentimentTrainer:
         train_df = pd.read_csv(self.config.TRAIN_PATH)
         test_df = pd.read_csv(self.config.TEST_PATH)
 
-        train_df["text"] = train_df["text"].apply(self.clean_text)
-        test_df["text"] = test_df["text"].apply(self.clean_text)
+        train_df["text"] = train_df["text"].apply(clean_text)
+        test_df["text"] = test_df["text"].apply(clean_text)
         
         train_df["token_length"] = train_df["text"].apply(lambda x: len(self.tokenizer.tokenize(x, truncation=False)))
-        train_df = train_df[train_df["token_length"] < 512] 
+        train_df = train_df[train_df["token_length"] < 512] # remove outliers
 
         train_dataset = Dataset.from_pandas(train_df)
         test_dataset = Dataset.from_pandas(test_df)

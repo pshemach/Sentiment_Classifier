@@ -1,45 +1,40 @@
 """
 Prediction script for Sentiment Classification
 """
-import re
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from .utils import clean_text
 
 class SentimentPredictor:
-
+    """Sentiment prediction class using a locally saved DistilBERT model."""
     def __init__(self, model_path="model"):
+        try:
+            self.model_path = model_path
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+            self.model.eval()
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load model or tokenizer from {model_path}"
+            ) from e
 
-        self.model_path = model_path
-
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-
-        self.model.eval()
-
-    # ------------------------------------------------
-    # Text preprocessing (same as training)
-    # ------------------------------------------------
-    def clean_text(self, text):
-
-        text = text.lower()
-
-        text = re.sub(r"http\S+", "", text)
-        text = re.sub(r"<.*?>", "", text)
-        text = re.sub(r"[^a-zA-Z\s]", "", text)
-        text = re.sub(r"\s+", " ", text).strip()
-
-        return text
-
-    # ------------------------------------------------
-    # Predict sentiment
-    # ------------------------------------------------
     def predict(self, text):
+        """
+        Predict sentiment for a single text input.
 
-        text = self.clean_text(text)
+        Args:
+            text (str): Input text to classify
+
+        Returns:
+            dict: Prediction result containing:
+                - "text": input text
+                - "sentiment": "positive" or "negative"
+                - "confidence": probability of predicted class (0.00–1.00)
+        """
+        cln_text = clean_text(text)
 
         inputs = self.tokenizer(
-            text,
+            cln_text,
             return_tensors="pt",
             truncation=True,
             padding=True,
@@ -58,7 +53,7 @@ class SentimentPredictor:
 
             confidence = probabilities[0][predicted_class].item()
 
-        label = "POSITIVE" if predicted_class == 1 else "NEGATIVE"
+        label = "positive" if predicted_class == 1 else "negative"
 
         return {
             "text":text,
@@ -66,11 +61,20 @@ class SentimentPredictor:
             "confidence": round(confidence, 2)
         }
         
-    # ------------------------------------------------
-    # Batch prediction
-    # ------------------------------------------------
     def predict_batch(self, texts):
-        cleaned_texts = [self.clean_text(text) for text in texts]
+        """
+        Predict sentiment for batch inference.
+
+        Args:
+            texts (list[str]): List of input texts to classify
+
+        Returns:
+            list[dict]: List of prediction results, each containing:
+                - "text": original input text
+                - "sentiment": "positive" or "negative"
+                - "confidence": probability of predicted class (0.00–1.00)
+        """
+        cleaned_texts = [clean_text(text) for text in texts]
         
         inputs = self.tokenizer(
             cleaned_texts,
@@ -98,7 +102,7 @@ class SentimentPredictor:
             results.append({
                 "text": text,
                 "sentiment": sentiment,
-                "confidence": round(confidence, 4)
+                "confidence": round(confidence, 2)
             })
 
         return results
