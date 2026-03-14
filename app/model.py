@@ -56,7 +56,7 @@ class SentimentPredictor:
         return {
             "text":text,
             "sentiment": label,
-            "confidence": round(confidence, 2)
+            "confidence": round(confidence, 4)
         }
         
     def predict_batch(self, texts):
@@ -96,7 +96,7 @@ class SentimentPredictor:
             results.append({
                 "text": text,
                 "sentiment": sentiment,
-                "confidence": round(confidence, 2)
+                "confidence": round(confidence, 4)
             })
 
         return results

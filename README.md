@@ -106,10 +106,10 @@ Evaluation metrics on the test dataset:
 
 | Metric    | Score  |
 | --------- | ------ |
-| Accuracy  | 0.9087 |
-| Precision | 0.9086 |
-| Recall    | 0.9089 |
-| F1 Score  | 0.9087 |
+| Accuracy  | 0.9081 |
+| Precision | 0.9000 |
+| Recall    | 0.9182 |
+| F1 Score  | 0.9090 |
 
 These results indicate balanced performance across both classes.
 
@@ -163,7 +163,7 @@ Request:
 
 ```
 {
-  "text": "This movie was amazing"
+  "text": "I felt this movie not good at the beginning but it was great at the end. I like the movie"
 }
 ```
 
@@ -171,8 +171,9 @@ Response:
 
 ```
 {
+  "text": "I felt this movie not good at the beginning but it was great at the end. I like the movie"
   "sentiment": "positive",
-  "confidence": 0.98
+  "confidence": 0.8573
 }
 ```
 
@@ -202,12 +203,12 @@ Response:
   {
     "text": "This movie was fantastic",
     "sentiment": "positive",
-    "confidence": 0.98
+    "confidence": 0.9952
   },
   {
     "text": "Worst movie ever",
     "sentiment": "negative",
-    "confidence": 0.97
+    "confidence": 0.9999
   }
 ]
 ```
@@ -227,7 +228,7 @@ HTTP 400
 
 This project uses **DistilBERT**, a smaller and faster version of BERT. It provides strong language understanding regarding context of the text.
 
-The model was fine-tuned on the **IMDb movie reviews dataset**, a widely used benchmark for sentiment analysis containing balanced labeled positive and negative reviews.
+The model was fine-tuned on the **IMDb movie reviews dataset**, a widely used benchmark for sentiment analysis containing balanced dataset with labeled positive and negative reviews.
 
 Using a pretrained transformer allows the system to leverage **transfer learning**, meaning the model already understands language structure and only needs fine-tuning for sentiment prediction.
 
@@ -240,5 +241,3 @@ The system fine-tunes a **DistilBERT transformer model** for binary sentiment cl
 Text inputs are tokenized with a maximum length of **256 tokens**, which captures most relevant context while keeping training efficient.
 
 Batch inference is implemented via the `/predict/batch` endpoint to improve throughput compared to sending requests one-by-one.
-
-With more time, improvements would include **experiment tracking, model versioning, and request batching queues for large-scale inference systems**.
