@@ -10,12 +10,11 @@ from app.model import SentimentPredictor
 from typing import List
 
 
-app = FastAPI(
-    title="Sentiment Analysis API",
-    version="1.0.0"
-)
+app = FastAPI(title="Sentiment Analysis API", version="1.0.0")
 
+# ------------------------------------------------
 # Enable CORS for production
+# ------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Adjust for specific origins in production
@@ -52,9 +51,9 @@ def health():
 @app.post("/predict", status_code=status.HTTP_200_OK, response_model=PredictResponse)
 def predict(request: PredictRequest):
     try:
-        result = model.predict(request.text)
+        result = model.predict(request.text) 
         
-        return result
+        return PredictResponse(text=result['text'], sentiment=result['sentiment'], confidence=result['confidence'])
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
             
@@ -69,6 +68,6 @@ def predict_batch(request: BatchPredictRequest):
         
         results = model.predict_batch(request.texts)
 
-        return results
+        return [BatchPrediction(text=result['text'], sentiment=result['sentiment'], confidence=result['confidence']) for result in results]
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

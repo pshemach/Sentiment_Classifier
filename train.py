@@ -42,7 +42,7 @@ class Config:
     MAX_LENGTH = 256
     TRAIN_BATCH_SIZE = 16
     EVAL_BATCH_SIZE = 16
-    EPOCHS = 5
+    EPOCHS = 10
     LEARNING_RATE = 2e-5
 
 
@@ -50,6 +50,10 @@ class Config:
 # Sentiment Trainer Class
 # ---------------------------------------------------
 class SentimentTrainer:
+    """
+    Trainer class for fine-tuning a DistilBERT model for sentiment classification.
+    Handles data loading, tokenization, training, evaluation, and model saving.
+    """
     def __init__(self, config: Config):
         self.config = config
         
@@ -61,11 +65,14 @@ class SentimentTrainer:
             num_labels=2
         )
 
-    # ---------------------------------------------------
-    # Load Dataset
-    # ---------------------------------------------------
     def load_data(self):
-
+        """
+        Load and preprocess the train and test CSV files.
+        Applies text cleaning and filters very long sequences.
+        
+        Returns:
+            tuple[Dataset, Dataset]: HuggingFace datasets for train and test
+        """
         logger.info("Loading CSV datasets...")
 
         train_df = pd.read_csv(self.config.TRAIN_PATH)
@@ -82,11 +89,16 @@ class SentimentTrainer:
 
         return train_dataset, test_dataset
 
-    # ---------------------------------------------------
-    # Tokenization
-    # ---------------------------------------------------
     def tokenize(self, examples):
+        """
+        Tokenize a batch of examples.
+        
+        Args:
+            examples: Dictionary with 'text' field
 
+        Returns:
+            Tokenized inputs ready for the model
+        """
         return self.tokenizer(
             examples["text"],
             truncation=True,
@@ -95,7 +107,16 @@ class SentimentTrainer:
         )
 
     def prepare_dataset(self, train_dataset, test_dataset):
+        """
+        Apply tokenization and set torch format for efficient training.
 
+        Args:
+            train_dataset: Raw training dataset
+            test_dataset: Raw test dataset
+
+        Returns:
+            Tokenized datasets ready for Trainer
+        """
         logger.info("Tokenizing dataset...")
 
         train_dataset = train_dataset.map(self.tokenize, batched=True)
@@ -113,11 +134,16 @@ class SentimentTrainer:
 
         return train_dataset, test_dataset
 
-    # ---------------------------------------------------
-    # Evaluation Metrics
-    # ---------------------------------------------------
     def compute_metrics(self, eval_pred):
+        """
+        Compute evaluation metrics for training.
 
+        Args:
+            eval_pred: Tuple of (logits, labels)
+
+        Returns:
+            Dictionary with accuracy, precision, recall, f1
+        """
         logits, labels = eval_pred
         
         predictions = np.argmax(logits, axis=1)
@@ -135,11 +161,8 @@ class SentimentTrainer:
             "f1": f1
         }
 
-    # ---------------------------------------------------
-    # Training
-    # ---------------------------------------------------
     def train(self):
-
+        """Main training pipeline: load data → tokenize → train → evaluate → save"""
         train_dataset, test_dataset = self.load_data()
 
         train_dataset, test_dataset = self.prepare_dataset(
@@ -167,17 +190,14 @@ class SentimentTrainer:
         )
 
         logger.info("Starting training...")
-
         trainer.train()
 
         logger.info("Evaluating model...")
-
         results = trainer.evaluate()
 
         logger.info(f"Evaluation Results: {results}")
-
+        
         logger.info("Saving model...")
-
         trainer.save_model(self.config.OUTPUT_DIR)
         self.tokenizer.save_pretrained(self.config.OUTPUT_DIR)
 
@@ -185,11 +205,8 @@ class SentimentTrainer:
 
 
 def main():
-
     config = Config()
-
     trainer = SentimentTrainer(config)
-
     trainer.train()
 
 

@@ -225,9 +225,9 @@ HTTP 400
 
 # Model and Dataset Choice
 
-This project uses **DistilBERT**, a smaller and faster version of BERT. It provides strong language understanding while being more efficient for API-based inference.
+This project uses **DistilBERT**, a smaller and faster version of BERT. It provides strong language understanding regarding context of the text.
 
-The model was fine-tuned on the **IMDb movie reviews dataset**, a widely used benchmark for sentiment analysis containing labeled positive and negative reviews.
+The model was fine-tuned on the **IMDb movie reviews dataset**, a widely used benchmark for sentiment analysis containing balanced labeled positive and negative reviews.
 
 Using a pretrained transformer allows the system to leverage **transfer learning**, meaning the model already understands language structure and only needs fine-tuning for sentiment prediction.
 

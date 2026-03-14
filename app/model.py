@@ -5,18 +5,21 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from .utils import clean_text
 
+# ------------------------------------------------
+# Sentiment prediction class
+# ------------------------------------------------
 class SentimentPredictor:
     """Sentiment prediction class using a locally saved DistilBERT model."""
     def __init__(self, model_path="model"):
         try:
             self.model_path = model_path
+            
             self.tokenizer = AutoTokenizer.from_pretrained(model_path)
             self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+            
             self.model.eval()
         except Exception as e:
-            raise RuntimeError(
-                f"Failed to load model or tokenizer from {model_path}"
-            ) from e
+            raise RuntimeError(f"Failed to load model or tokenizer from {model_path}") from e
 
     def predict(self, text):
         """
@@ -31,10 +34,10 @@ class SentimentPredictor:
                 - "sentiment": "positive" or "negative"
                 - "confidence": probability of predicted class (0.00–1.00)
         """
-        cln_text = clean_text(text)
+        cleaned_text = clean_text(text)
 
         inputs = self.tokenizer(
-            cln_text,
+            cleaned_text,
             return_tensors="pt",
             truncation=True,
             padding=True,
@@ -42,15 +45,10 @@ class SentimentPredictor:
         )
 
         with torch.no_grad():
-
             outputs = self.model(**inputs)
-
             logits = outputs.logits
-
             probabilities = torch.softmax(logits, dim=1)
-
             predicted_class = torch.argmax(probabilities).item()
-
             confidence = probabilities[0][predicted_class].item()
 
         label = "positive" if predicted_class == 1 else "negative"
@@ -84,21 +82,17 @@ class SentimentPredictor:
             max_length=256
             )
         with torch.no_grad():
-
             outputs = self.model(**inputs)
 
         probs = torch.softmax(outputs.logits, dim=1)
 
         results = []
-
         for i, text in enumerate(texts):
-
             prediction = torch.argmax(probs[i]).item()
-
             confidence = probs[i][prediction].item()
-
+            
             sentiment = "positive" if prediction == 1 else "negative"
-
+            
             results.append({
                 "text": text,
                 "sentiment": sentiment,
